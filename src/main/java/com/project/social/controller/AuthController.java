@@ -2,7 +2,6 @@ package com.project.social.controller;
 
 import com.project.social.dto.LoginRequestDTO;
 import com.project.social.dto.RegisterRequestDTO;
-import com.project.social.dto.ResponseDTO;
 import com.project.social.infra.security.TokenService;
 import com.project.social.models.Usuario;
 import com.project.social.repository.UsuarioRepository;
@@ -60,8 +59,7 @@ public class AuthController {
             newUsuario.setNome(body.nome());
             this.usuarioRepository.save(newUsuario);
 
-            String token = this.tokenService.generateToken(newUsuario);
-            return ResponseEntity.ok(new ResponseDTO(newUsuario.getNome(), token));
+            return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
         return ResponseEntity.badRequest().build();
