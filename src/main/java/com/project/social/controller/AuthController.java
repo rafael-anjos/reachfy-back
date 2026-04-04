@@ -2,10 +2,12 @@ package com.project.social.controller;
 
 import com.project.social.dto.LoginRequestDTO;
 import com.project.social.dto.RegisterRequestDTO;
+import com.project.social.dto.ResponseDTO;
 import com.project.social.infra.security.TokenService;
 import com.project.social.models.Usuario;
 import com.project.social.repository.UsuarioRepository;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @RestController
@@ -63,5 +66,30 @@ public class AuthController {
         }
 
         return ResponseEntity.badRequest().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String token = Arrays.stream(request.getCookies())
+                .filter(c -> c.getName().equals("token"))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = tokenService.validateToken(token);
+        if (email == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        return ResponseEntity.ok(new ResponseDTO(usuario.getNome(), null));
     }
 }
